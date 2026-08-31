@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Where You Already Help People</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
+*{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;background:linear-gradient(135deg,#f8f4ec,#eee7dc);color:#283238;font-family:Nunito,system-ui,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}.page{min-height:100vh;padding:18px;display:flex;justify-content:center;align-items:center}.card{width:min(720px,100%);background:#fffdf8;border:1px solid #e5e1d8;border-radius:28px;box-shadow:0 20px 70px #2b2b2418}.intro,.success{padding:clamp(28px,7vw,60px)}.tag{color:#6e7775;font-weight:800;font-size:14px;margin-bottom:20px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#52766d;margin-right:8px}.intro h1,.success h1,.question h1{font-family:Kalam,cursive;color:#263238;margin:0;font-weight:700}.intro h1{font-size:clamp(45px,8vw,72px);line-height:.98}.sub,.lead{color:#626c69;font-size:18px;line-height:1.65}.name{margin-top:30px}.name label{display:block;font-weight:800;margin-bottom:9px}.name label span{color:#8b928f;font-weight:600}.name input,input,textarea{width:100%;border:1.5px solid #d9d8d0;background:#fffefa;border-radius:16px;outline:none}.name input{padding:15px}.note{margin:25px 0;padding:16px 18px;border-left:4px solid #52766d;background:#f1f5f0;border-radius:0 14px 14px 0;color:#5e6865;line-height:1.5}.note strong{display:block;color:#35423f}.primary,.secondary{border:0;border-radius:15px;padding:14px 19px;font-weight:800}.primary{color:white;background:#426b61;box-shadow:0 8px 20px #426b6133}.secondary{background:#ebeae4;color:#52605d}.saved{color:#7d8581;font-size:13px}.meta{padding:23px 28px 11px;display:flex;justify-content:space-between;color:#747d79;font-size:13px;font-weight:800}.track{height:7px;background:#e5e5de;margin:0 28px;border-radius:999px;overflow:hidden}.bar{height:100%;background:#52766d;border-radius:999px;transition:width .25s}.question{padding:42px 48px 25px}.num{color:#52766d;font:20px Kalam,cursive;margin:0 0 8px}.question h1{font-size:clamp(30px,5vw,46px);line-height:1.12;margin-bottom:27px}.question textarea{min-height:230px;padding:20px;font-size:18px;line-height:1.65;resize:vertical}.question textarea:focus,input:focus{border-color:#52766d;box-shadow:0 0 0 4px #52766d1a}.hint{font-size:13px;color:#929894}.actions{display:flex;justify-content:space-between;gap:12px;padding:0 48px 23px}.answered{text-align:center;border-top:1px solid #ecebe5;padding:13px;color:#8a918d;font-size:12px}.error{margin:0 48px 20px;padding:13px 15px;border-radius:12px;background:#fff0ed;color:#9b4d42;font-size:14px}.success{text-align:center}.mark{width:70px;height:70px;display:grid;place-items:center;margin:0 auto 22px;border-radius:50%;background:#dfece7;color:#426b61;font-size:35px;font-weight:800}.success h1{font-size:clamp(40px,7vw,62px);line-height:1.02}.success button{margin-top:25px}@media(max-width:600px){.page{padding:12px;align-items:flex-start}.card{border-radius:22px;margin-top:10px}.intro{padding:28px 22px}.intro h1{font-size:47px}.sub,.lead{font-size:16px}.meta{padding:20px 18px 10px}.track{margin:0 18px}.question{padding:35px 20px 22px}.question h1{font-size:32px}.question textarea{min-height:210px;font-size:17px}.actions{padding:0 20px 20px}.error{margin:0 20px 18px}}
+</style>
+</head>
+<body><div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script>
+const {useState,useEffect}=React;
+const ENDPOINT="https://formspree.io/f/mrpgekpj";
+const Q=[
+"What problems or struggles do people most often come to you with (even casually)?",
+"When friends, family, or colleagues ask for your advice or help, what topics come up most frequently?",
+"What skills or knowledge do you have that others regularly say they wish they possessed?",
+"Looking back over the last 1–2 years, when have people thanked you the most sincerely, and for what?",
+"What do people compliment you on most often (even if it feels ordinary to you)?",
+"In what situations do you feel most useful or “in your element” when interacting with others?",
+"What kinds of problems do you find yourself solving almost automatically for other people?",
+"What knowledge, experience, or perspective do you have that most people around you lack?",
+"If someone asked your close friends “How does [your name] help people?”, what would they likely say?",
+"What activities or conversations leave you feeling energized rather than drained?",
+"What past experiences (good or difficult) have given you insight that others often need?",
+"When you help someone and it goes well, what specifically did you provide (information, emotional support, practical help, a different perspective, connections, money etc.)?",
+"What groups of people do you naturally feel drawn to help or understand (e.g., beginners in a field, people going through a specific life stage, professionals in a certain field)?",
+"What frustrations or inefficiencies do you notice in the work (or in people’s lives) that you feel capable of improving?",
+"If money and time were no issue, what would you most want to teach, share, or help others with?",
+"What unique combination of skills, interests, or life experiences do you have that few others share?",
+"When have you helped someone and later realized it made a meaningful difference for them?",
+"What do people thank you for that you almost take for granted or don’t consider “special”?",
+"Looking at the people you admire who are valuable to others, what similar qualities or approaches do you already possess (even in a smaller way)?",
+"If you had to summarize in one sentence right now “The main way I can be of value to people is…”, what would you write (even if it’s incomplete)?"
+];
+function App(){
+ const [step,setStep]=useState(-1),[name,setName]=useState(""),[a,setA]=useState(()=>Array(20).fill("")),[busy,setBusy]=useState(false),[err,setErr]=useState(""),[done,setDone]=useState(false);
+ useEffect(()=>{try{let x=JSON.parse(localStorage.getItem("way-help"));if(x){setName(x.name||"");if(x.a?.length===20)setA(x.a)}}catch{}},[]);
+ useEffect(()=>{try{localStorage.setItem("way-help",JSON.stringify({name,a}))}catch{}},[name,a]);
+ const count=a.filter(x=>x.trim()).length;
+ const begin=()=>{setErr("");setStep(0)};
+ const next=()=>{setErr("");if(step<19)setStep(step+1);else send()};
+ const send=async()=>{
+  setBusy(true);setErr("");
+  const f=new FormData();f.append("_subject","Where You Already Help People — questionnaire response");f.append("name",name||"Not provided");f.append("answered_questions",count+" of 20");
+  Q.forEach((q,i)=>{f.append("question_"+(i+1),a[i].trim()||"(Skipped)");f.append("prompt_"+(i+1),q)});
+  try{let r=await fetch(ENDPOINT,{method:"POST",body:f,headers:{Accept:"application/json"}});if(!r.ok){let d={};try{d=await r.json()}catch{};throw Error(d.errors?.map(x=>x.message).join(" ")||"Formspree could not accept the submission.")}localStorage.removeItem("way-help");setDone(true)}catch(e){setErr(e.message||"Couldn't send your responses. Please try again.")}finally{setBusy(false)}
+ };
+ if(done)return <main className="page"><section className="card success"><div className="mark">✓</div><div className="tag">THANK YOU</div><h1>Your responses have been received.</h1><p className="lead">Thank you for taking the time to notice the ways you already help people.</p><button className="primary" onClick={()=>{setA(Array(20).fill(""));setName("");setDone(false);setStep(-1)}}>Start again</button></section></main>;
+ if(step===-1)return <main className="page"><section className="card intro"><div className="tag"><span className="dot"></span>20 short prompts</div><h1>Where you already help people</h1><p className="sub">A simple exercise to notice the patterns in how you already help others.</p><div className="name"><label>Your name <span>(optional — personalizes one question)</span></label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/></div><div className="note"><strong>There are no right answers.</strong>Answer as many as feel true — skip the rest.</div><button className="primary" onClick={begin}>Begin questionnaire →</button>{count>0&&<p className="saved">Your previous progress is saved on this device ({count}/20 answered).</p>}</section></main>;
+ const pct=(step+1)*5, q=Q[step].replace("[your name]",name||"your name");
+ return <main className="page"><section className="card"><div className="meta"><span>Question {step+1} of 20</span><span>{pct}%</span></div><div className="track"><div className="bar" style={{width:pct+"%"}}/></div><div className="question"><p className="num">{String(step+1).padStart(2,"0")}</p><h1>{q}</h1><textarea autoFocus value={a[step]} onChange={e=>{let x=[...a];x[step]=e.target.value;setA(x)}} placeholder="Write whatever comes to mind…"></textarea><p className="hint">You can leave this blank and continue.</p></div>{err&&<div className="error">{err}</div>}<div className="actions"><button className="secondary" disabled={busy} onClick={()=>setStep(step?step-1:-1)}>← Back</button><button className="primary" disabled={busy} onClick={next}>{busy?"Sending…":step===19?"Submit responses":"Next →"}</button></div><div className="answered">{count} of 20 answered</div></section></main>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script></body></html>
