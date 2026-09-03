@@ -48,7 +48,7 @@ h1{font-size:47px}.sub,.lead{font-size:16px}.question h1{font-size:32px}
 <body>
 <div id="root"></div>
 
-  <script>
+<script>
 window.onerror = function(message, source, line, column, error) {
   document.getElementById("root").innerHTML =
     "<h2>Survey Error</h2><p>" + message + "</p><p>Line: " + line + "</p>";
@@ -57,8 +57,8 @@ window.onerror = function(message, source, line, column, error) {
   
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
 <script type="text/babel">
 const {useState,useEffect}=React;
 const ENDPOINT="https://formspree.io/f/mrpgekpj";
@@ -143,7 +143,16 @@ const [busy,setBusy]=useState(false);
 const [err,setErr]=useState("");
 const [ref,setRef]=useState("");
 
-const toggle=(p)=>setSelected(x=>x.includes(p)?x.filter(y=>y!==p):[...x,p]);
+const toggle=(p)=>{
+  if(p==="Survey only"){
+    setSelected(["Survey only"]);
+  } else {
+    setSelected(x=> {
+      const filtered = x.filter(y=>y!=="Survey only");
+      return filtered.includes(p)?filtered.filter(y=>y!==p):[...filtered,p];
+    });
+  }
+};
 
 const start=()=>{setErr("");setStage("general");};
 
@@ -156,22 +165,36 @@ if(!selected.length){setErr("Please select at least one welfare area, or choose 
 if(selected.includes("Survey only")){setStage("final");return}
 setProgIndex(0);setStage("programme");setErr("");
 }
+
 function nextProgramme(){
-const p=selected[progIndex];
-if(progIndex<selected.length-1){setProgIndex(x=>x+1);setErr("");return}
 setStage("interest");setErr("");
 }
+
 function chooseInterest(v){
-setRegister(x=>({...x,[selected[progIndex]]:v}));
-if(v==="Yes"){setStage("registration");}
-else if(progIndex<selected.length-1){setProgIndex(x=>x+1);setStage("programme");}
-else setStage("final");
+const p=selected[progIndex];
+setRegister(x=>({...x,[p]:v}));
+if(v==="Yes"){
+  setStage("registration");
+} else {
+  if(progIndex<selected.length-1){
+    setProgIndex(x=>x+1);
+    setStage("programme");
+  } else {
+    setStage("consent");
+  }
 }
+}
+
 function nextRegistration(){
 if(!contact.name.trim()||!contact.phone.trim()||!contact.location.trim()){setErr("Please complete your name, phone number and location.");return}
 if(!idFile){setErr("Please upload an ID for registration.");return}
-if(progIndex<selected.length-1){setProgIndex(x=>x+1);setStage("programme");setErr("");}
-else setStage("consent");
+if(progIndex<selected.length-1){
+  setProgIndex(x=>x+1);
+  setStage("programme");
+  setErr("");
+} else {
+  setStage("consent");
+}
 }
 
 async function submit(){
@@ -214,35 +237,39 @@ if(stage==="general")return <main className="page"><section className="card">
 <h2>A little about your situation</h2>
 {general.map((q,i)=><div key={i}><label>{i+1}. {q[0]}</label>{q[1].map(o=><label className="choice" key={o}><input type="radio" name={"g"+i} checked={generalAns[i]===o} onChange={()=>saveGeneral(i,o)}/>{o}</label>)}</div>)}
 <label>Which welfare support would you like to explore?</label>
-{["Rental","Health","Education","Salary Up-front","Survey only"].map(o=><label className="choice" key={o}><input type="checkbox" checked={selected.includes(o)} onChange={()=>toggle(o)}/>{o==="Survey only"?"I'm only completing the survey":programmes[o]?.title||o}</label>)}
+{["Rental","Health","Education","Salary Up-front","Survey only"].map(o=><label className="choice" key={o}><input type="checkbox" checked={selected.includes(o)} onChange={()=>toggle(o)}/>{o==="Survey only"?"I'm only completing the survey":(programmes[o]?programmes[o].title:o)}</label>)}
 {err&&<div className="error">{err}</div>}
 <div className="actions"><button className="secondary" onClick={()=>setStage("intro")}>← Back</button><button className="primary" onClick={nextGeneral}>Continue →</button></div><Footer/>
 </section></main>;
 
 if(stage==="programme"){
 const p=selected[progIndex],data=programmes[p];
+if(!data) return null;
 return <main className="page"><section className="card">
 <div className="meta"><span>{data.icon} {data.title.toUpperCase()}</span><span>{progIndex+1} / {selected.length}</span></div>
 <h2>{data.title}</h2><p className="sub">Help us understand what this kind of support would mean for you.</p>
 {data.questions.map((q,i)=><div key={i}><label>{i+1}. {q[0]}</label>{q[1].map(o=><label className="choice" key={o}><input type="radio" name={p+i} checked={answers[p+":"+i]===o} onChange={()=>saveProg(p,i,o)}/>{o}</label>)}</div>)}
 {err&&<div className="error">{err}</div>}
-<div className="actions"><button className="secondary" onClick={()=>{if(progIndex===0)setStage("general");else {setProgIndex(x=>x-1);setStage("programme")}}}>← Back</button><button className="primary" onClick={nextProgramme}>{progIndex<selected.length-1?"Next support area →":"Continue →"}</button></div><Footer/>
+<div className="actions"><button className="secondary" onClick={()=>{if(progIndex===0)setStage("general");else {setProgIndex(x=>x-1);setStage("interest")}}}>← Back</button><button className="primary" onClick={nextProgramme}>Continue →</button></div><Footer/>
 </section></main>;
 }
 
 if(stage==="interest"){
 const p=selected[progIndex],data=programmes[p];
+if(!data) return null;
 return <main className="page"><section className="card">
 <div className="tag">{data.icon} {data.title.toUpperCase()}</div>
 <h2>Would you like to register for {data.title}?</h2>
 <p className="sub">Registration lets us collect the information needed to follow up on your interest. It does not guarantee approval or immediate assistance.</p>
 <div className="choice" onClick={()=>chooseInterest("Yes")}><input type="radio" readOnly checked={register[p]==="Yes"}/> Yes, I would like to register</div>
 <div className="choice" onClick={()=>chooseInterest("No")}><input type="radio" readOnly checked={register[p]==="No"}/> No, I'm only providing survey feedback</div>
+<div className="actions" style={{marginTop: "20px"}}><button className="secondary" onClick={()=>setStage("programme")}>← Back</button></div>
 <Footer/></section></main>;
 }
 
 if(stage==="registration"){
 const p=selected[progIndex],data=programmes[p];
+if(!data) return null;
 return <main className="page"><section className="card">
 <div className="tag">REGISTRATION • {data.title.toUpperCase()}</div>
 <h2>Welfare Support Registration</h2>
@@ -254,7 +281,7 @@ return <main className="page"><section className="card">
 <label>Preferred contact method</label><select value={contact.contactMethod} onChange={e=>setContact({...contact,contactMethod:e.target.value})}><option>WhatsApp</option><option>Phone call</option><option>SMS</option><option>Email</option></select>
 {data.registration.map((q,i)=><div key={i}><label>{q[0]}</label>{q[1].map(o=><label className="choice" key={o}><input type="radio" name={"r"+p+i} checked={regAnswers[p+":"+i]===o} onChange={()=>saveReg(p,i,o)}/>{o}</label>)}</div>)}
 <label>Briefly describe the support you need</label><textarea value={regAnswers[p+":description"]||""} onChange={e=>saveReg(p,"description",e.target.value)} placeholder="Tell us what you need..."></textarea>
-<label>Identification document *</label><input className="file" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={e=>setIdFile(e.target.files[0]||null)}/>
+<label>Identification document *</label><input className="file" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={e=>setIdFile(e.target.files ? e.target.files[0] : null)}/>
 <p className="small">Accepted: JPG, PNG or PDF. Please upload a clear, valid ID. Do not upload passwords, PINs or unrelated documents.</p>
 {err&&<div className="error">{err}</div>}
 <div className="actions"><button className="secondary" onClick={()=>setStage("interest")}>← Back</button><button className="primary" onClick={nextRegistration}>Continue →</button></div><Footer/>
@@ -268,7 +295,11 @@ if(stage==="consent")return <main className="page"><section className="card">
 <label className="choice"><input type="checkbox" id="c2" onChange={e=>setRegister({...register,_c2:e.target.checked})}/> I understand that registration does not automatically guarantee welfare assistance.</label>
 <label className="choice"><input type="checkbox" id="c3" onChange={e=>setRegister({...register,_c3:e.target.checked})}/> I consent to Welfare Systems using the information I provide to process and follow up on my registration.</label>
 {err&&<div className="error">{err}</div>}
-<div className="actions"><button className="secondary" onClick={()=>setStage("registration")}>← Back</button><button className="primary" disabled={busy||!register._c1||!register._c2||!register._c3} onClick={submit}>{busy?"Sending…":"Submit Survey & Registration"}</button></div><Footer/>
+<div className="actions"><button className="secondary" onClick={()=>{
+  const p=selected[progIndex];
+  if(register[p]==="Yes") setStage("registration");
+  else setStage("interest");
+}}>← Back</button><button className="primary" disabled={busy||!register._c1||!register._c2||!register._c3} onClick={submit}>{busy?"Sending…":"Submit Survey & Registration"}</button></div><Footer/>
 </section></main>;
 
 if(stage==="final")return <main className="page"><section className="card success">
