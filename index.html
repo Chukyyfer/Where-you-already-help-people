@@ -47,6 +47,14 @@ h1{font-size:47px}.sub,.lead{font-size:16px}.question h1{font-size:32px}
 </head>
 <body>
 <div id="root"></div>
+
+  <script>
+window.onerror = function(message, source, line, column, error) {
+  document.getElementById("root").innerHTML =
+    "<h2>Survey Error</h2><p>" + message + "</p><p>Line: " + line + "</p>";
+};
+</script>
+  
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script>
