@@ -2,7 +2,7 @@
 
 ## About
 
-It's a survey about how we can help people, and the community at large.
+It's a survey & platform about how we can help people, and the community at large.
 
 ## Getting Started
 
