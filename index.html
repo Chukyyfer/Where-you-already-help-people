@@ -50,15 +50,15 @@ h1{font-size:47px}.sub,.lead{font-size:16px}.question h1{font-size:32px}
 
 <script>
 window.onerror = function(message, source, line, column, error) {
-  document.getElementById("root").innerHTML =
-    "<h2>Survey Error</h2><p>" + message + "</p><p>Line: " + line + "</p>";
+  document.getElementById("root").innerHTML =
+    "<h2>Survey Error</h2><p>" + message + "</p><p>Line: " + line + "</p>";
 };
 </script> 
 
 <!-- 1. THIRD-PARTY DEPENDENCIES (UPLOADCARE + REACT FLAVORS) -->
 <script>
-  // Swap 'demopublickey' out for your actual free account public key on Uploadcare
-  UPLOADCARE_PUBLIC_KEY = "5478a0541d81f6463f3a"; 
+  // Swap 'demopublickey' out for your actual free account public key on Uploadcare
+  UPLOADCARE_PUBLIC_KEY = "5478a0541d81f6463f3a"; 
 </script>
 <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js" charset="utf-8"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -151,33 +151,33 @@ const [err,setErr]=useState("");
 const [ref,setRef]=useState(""); 
 
 const openUploader=()=>{
-  setUploading(true);
-  uploadcare.openDialog(null,{
-    imagesOnly:false,
-    tabs:'file camera'
-  }).done(function(file){
-    file.done(function(fileInfo){
-      setIdFile(fileInfo.cdnUrl);
-      setUploading(false);
-      setErr("");
-    }).fail(function(){
-      setUploading(false);
-      setErr("File upload failed. Please try again.");
-    });
-  }).fail(function(){
-    setUploading(false);
-  });
+  setUploading(true);
+  uploadcare.openDialog(null,{
+    imagesOnly:false,
+    tabs:'file camera'
+  }).done(function(file){
+    file.done(function(fileInfo){
+      setIdFile(fileInfo.cdnUrl);
+      setUploading(false);
+      setErr("");
+    }).fail(function(){
+      setUploading(false);
+      setErr("File upload failed. Please try again.");
+    });
+  }).fail(function(){
+    setUploading(false);
+  });
 }; 
 
 const toggle=(p)=>{
-  if(p==="Survey only"){
-    setSelected(["Survey only"]);
-  } else {
-    setSelected(x=> {
-      const filtered = x.filter(y=>y!=="Survey only");
-      return filtered.includes(p)?filtered.filter(y=>y!==p):[...filtered,p];
-    });
-  }
+  if(p==="Survey only"){
+    setSelected(["Survey only"]);
+  } else {
+    setSelected(x=> {
+      const filtered = x.filter(y=>y!=="Survey only");
+      return filtered.includes(p)?filtered.filter(y=>y!==p):[...filtered,p];
+    });
+  }
 }; 
 
 const start=()=>{setErr("");setStage("general");}; 
@@ -188,7 +188,7 @@ const saveReg=(p,i,v)=>setRegAnswers(x=>({...x,[p+":"+i]:v}));
 
 function nextGeneral(){
 if(!selected.length){setErr("Please select at least one welfare area, or choose “I'm only completing the survey.”");return}
-if(selected.includes("Survey only")){setStage("final");return}
+if(selected.includes("Survey only")){setStage("consent");setErr("");return}
 setProgIndex(0);setStage("programme");setErr("");
 } 
 
@@ -200,14 +200,14 @@ function chooseInterest(v){
 const p=selected[progIndex];
 setRegister(x=>({...x,[p]:v}));
 if(v==="Yes"){
-  setStage("registration");
+  setStage("registration");
 } else {
-  if(progIndex<selected.length-1){
-    setProgIndex(x=>x+1);
-    setStage("programme");
-  } else {
-    setStage("consent");
-  }
+  if(progIndex<selected.length-1){
+    setProgIndex(x=>x+1);
+    setStage("programme");
+  } else {
+    setStage("consent");
+  }
 }
 } 
 
@@ -215,11 +215,11 @@ function nextRegistration(){
 if(!contact.name.trim()||!contact.phone.trim()||!contact.location.trim()){setErr("Please complete your name, phone number and location.");return}
 if(!idFile){setErr("Please upload an ID for registration.");return}
 if(progIndex<selected.length-1){
-  setProgIndex(x=>x+1);
-  setStage("programme");
-  setErr("");
+  setProgIndex(x=>x+1);
+  setStage("programme");
+  setErr("");
 } else {
-  setStage("consent");
+  setStage("consent");
 }
 } 
 
@@ -228,54 +228,107 @@ setErr("");setBusy(true);
 try{
 const f=new FormData();
 const reference="WS-"+new Date().getFullYear()+"-"+Math.random().toString(36).slice(2,8).toUpperCase();
-f.append("_subject","Welfare Systems — New Survey / Welfare Registration");
-f.append("reference_number",reference);
-f.append("full_name",contact.name||"Not provided");
-f.append("phone",contact.phone||"Not provided");
-f.append("email",contact.email||"Not provided");
-f.append("location",contact.location||"Not provided");
-f.append("preferred_contact",contact.contactMethod);
-f.append("selected_programmes",selected.join(", "));
-f.append("registration_status",JSON.stringify(register)); 
+const isSurveyOnly = selected.includes("Survey only");
 
-general.forEach((q,i)=>{
-  f.append(q[0], generalAns[i] || "(Not answered)");
-}); 
+// Short, safe field names — Formspree rejects or silently drops submissions
+// that use very long keys, brackets, or special characters in field names.
+f.append("_subject", isSurveyOnly
+  ? "Welfare Systems — Survey Only"
+  : "Welfare Systems — Survey + Welfare Registration");
+f.append("reference_number", reference);
+f.append("submission_type", isSurveyOnly ? "Survey only" : "Full registration");
+f.append("full_name", contact.name || "Not provided");
+f.append("phone", contact.phone || "Not provided");
+const cleanEmail = (contact.email || "").trim();
+const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
+// Always send a valid-looking email so Formspree does not reject the payload.
+// Store the real value separately for your records.
+f.append("email", emailLooksValid ? cleanEmail : "noreply@welfare-systems-survey.local");
+f.append("email_address_provided", cleanEmail || "Not provided");
+f.append("location", contact.location || "Not provided");
+f.append("preferred_contact", contact.contactMethod || "WhatsApp");
+f.append("selected_programmes", selected.length ? selected.join(", ") : "Survey only (no programme)");
 
+// Registration status as readable text (not raw JSON with internal flags)
+const statusLines = selected
+  .filter(p => p !== "Survey only")
+  .map(p => `${p}: ${register[p] || "Not answered"}`);
+f.append("registration_interest", statusLines.length ? statusLines.join(" | ") : "Survey only");
+
+// General questions — short keys + full question in the value for readability
+general.forEach((q, i) => {
+  const answer = generalAns[i] || "(Not answered)";
+  f.append("general_" + i, q[0] + " → " + answer);
+});
+
+// Programme survey answers
 Object.entries(answers).forEach(([key, val]) => {
-  const [progName, indexStr] = key.split(":");
-  const idx = parseInt(indexStr, 10);
-  const progData = programmes[progName];
-  if (progData && progData.questions[idx]) {
-    f.append(`[${progData.title}] ${progData.questions[idx][0]}`, val || "(Not answered)");
-  } else {
-    f.append(`programme_${key}`, val || "(Not answered)");
-  }
-}); 
+  const [progName, indexStr] = key.split(":");
+  const idx = parseInt(indexStr, 10);
+  const progData = programmes[progName];
+  const answer = val || "(Not answered)";
+  if (progData && progData.questions[idx]) {
+    const safeProg = progName.replace(/\s+/g, "_");
+    f.append("prog_" + safeProg + "_" + idx, progData.questions[idx][0] + " → " + answer);
+  } else {
+    f.append("programme_" + key.replace(/[^a-zA-Z0-9_]/g, "_"), answer);
+  }
+});
 
+// Registration detail answers
 Object.entries(regAnswers).forEach(([key, val]) => {
-  const [progName, fieldId] = key.split(":");
-  const progData = programmes[progName];
-  if (fieldId === "description") {
-    f.append(`[${progName} Registration] Describe the support you need`, val || "(Not answered)");
-  } else {
-    const idx = parseInt(fieldId, 10);
-    if (progData && progData.registration[idx]) {
-      f.append(`[${progData.title} Registration] ${progData.registration[idx][0]}`, val || "(Not answered)");
-    } else {
-      f.append(`registration_${key}`, val || "(Not answered)");
-    }
-  }
-}); 
+  const [progName, fieldId] = key.split(":");
+  const progData = programmes[progName];
+  const answer = val || "(Not answered)";
+  const safeProg = (progName || "unknown").replace(/\s+/g, "_");
+  if (fieldId === "description") {
+    f.append("reg_" + safeProg + "_description", "Describe the support you need → " + answer);
+  } else {
+    const idx = parseInt(fieldId, 10);
+    if (progData && progData.registration[idx]) {
+      f.append("reg_" + safeProg + "_" + idx, progData.registration[idx][0] + " → " + answer);
+    } else {
+      f.append("registration_" + key.replace(/[^a-zA-Z0-9_]/g, "_"), answer);
+    }
+  }
+});
 
-if(idFile) f.append("identification_document_url",idFile); 
+// ID is already hosted on Uploadcare — send the public URL only (no binary upload)
+if (idFile) {
+  f.append("identification_document_url", idFile);
+} else if (!isSurveyOnly) {
+  f.append("identification_document_url", "(No file uploaded)");
+}
 
-const r=await fetch(ENDPOINT,{method:"POST",body:f,headers:{Accept:"application/json"}});
-if(!r.ok)throw new Error("Formspree could not accept the submission. Please try again.");
-setRef(reference);setStage("done");
-}catch(e){setErr(e.message||"Something went wrong. Please try again.");}
-finally{setBusy(false);}
-} 
+// Consent flags (readable)
+f.append("consent_accuracy", register._c1 ? "Yes" : "No");
+f.append("consent_no_guarantee", register._c2 ? "Yes" : "No");
+f.append("consent_follow_up", register._c3 ? "Yes" : "No");
+
+const r = await fetch(ENDPOINT, {
+  method: "POST",
+  body: f,
+  headers: { Accept: "application/json" }
+});
+
+let body = null;
+try { body = await r.json(); } catch (_) {}
+
+if (!r.ok) {
+  // Surface Formspree's actual error so you can diagnose
+  const msg = (body && (body.error || (body.errors && body.errors.map(e => e.message || e).join("; "))))
+    || ("Formspree rejected the submission (HTTP " + r.status + "). Please try again.");
+  throw new Error(msg);
+}
+
+setRef(reference);
+setStage(isSurveyOnly ? "final" : "done");
+} catch (e) {
+  setErr(e.message || "Something went wrong. Please try again.");
+} finally {
+  setBusy(false);
+}
+}
 
 function Footer(){return <div className="footer">© Welfare Systems 2026</div>} 
 
@@ -340,14 +393,14 @@ return <main className="page"><section className="card">
 <label>Identification document *</label> 
 
 <div className="file-wrapper">
-  <button type="button" className="secondary" onClick={openUploader} disabled={uploading}>
-    {uploading ? "Uploading Attachment..." : idFile ? "✓ File Linked Successfully" : "Choose ID File"}
-  </button>
-  {idFile && (
-    <div style={{marginTop:"8px",fontSize:"13px",color:"#52766d"}}>
-      File Ready: <a href={idFile} target="_blank" rel="noreferrer" style={{color:"#426b61",fontWeight:"bold",textDecoration:"underline"}}>Preview Document</a>
-    </div>
-  )}
+  <button type="button" className="secondary" onClick={openUploader} disabled={uploading}>
+    {uploading ? "Uploading Attachment..." : idFile ? "✓ File Linked Successfully" : "Choose ID File"}
+  </button>
+  {idFile && (
+    <div style={{marginTop:"8px",fontSize:"13px",color:"#52766d"}}>
+      File Ready: <a href={idFile} target="_blank" rel="noreferrer" style={{color:"#426b61",fontWeight:"bold",textDecoration:"underline"}}>Preview Document</a>
+    </div>
+  )}
 </div> 
 
 <p className="small">Accepted: JPG, PNG or PDF. Please upload a clear, valid ID. Do not upload passwords, PINs or unrelated documents.</p>
@@ -364,9 +417,10 @@ if(stage==="consent")return <main className="page"><section className="card">
 <label className="choice"><input type="checkbox" id="c3" onChange={e=>setRegister({...register,_c3:e.target.checked})}/> I consent to Welfare Systems using the information I provide to process and follow up on my registration.</label>
 {err&&<div className="error">{err}</div>}
 <div className="actions"><button className="secondary" onClick={()=>{
-  const p=selected[progIndex];
-  if(register[p]==="Yes") setStage("registration");
-  else setStage("interest");
+  if(selected.includes("Survey only")){setStage("general");return}
+  const p=selected[progIndex];
+  if(register[p]==="Yes") setStage("registration");
+  else setStage("interest");
 }}>← Back</button><button className="primary" disabled={busy||!register._c1||!register._c2||!register._c3} onClick={submit}>{busy?"Sending…":"Submit Survey & Registration"}</button></div><Footer/>
 </section></main>; 
 
