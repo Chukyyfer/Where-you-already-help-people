@@ -37,7 +37,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .mark{width:70px;height:70px;display:grid;place-items:center;margin:0 auto 22px;border-radius:50%;background:#dfece7;color:#426b61;font-size:35px;font-weight:800}
 .footer{text-align:center;color:#8b928f;font-size:20px;margin-top:28px}
 .small{font-size:13px;color:#8b928f;line-height:1.5}
-.file{padding:12px;background:#f7f6f0;border-radius:14px}
+.file-wrapper{padding:16px;background:#f7f6f0;border-radius:14px;border:1px dashed #d8d7d0;margin-top:8px}
 @media(max-width:600px){
 .page{align-items:flex-start;padding:12px}.card{border-radius:22px;margin-top:10px;padding:28px 22px}
 h1{font-size:47px}.sub,.lead{font-size:16px}.question h1{font-size:32px}
@@ -46,29 +46,35 @@ h1{font-size:47px}.sub,.lead{font-size:16px}.question h1{font-size:32px}
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root"></div> 
 
 <script>
 window.onerror = function(message, source, line, column, error) {
-  document.getElementById("root").innerHTML =
-    "<h2>Survey Error</h2><p>" + message + "</p><p>Line: " + line + "</p>";
+  document.getElementById("root").innerHTML =
+    "<h2>Survey Error</h2><p>" + message + "</p><p>Line: " + line + "</p>";
 };
+</script> 
+
+<!-- 1. THIRD-PARTY DEPENDENCIES (UPLOADCARE + REACT FLAVORS) -->
+<script>
+  // Swap 'demopublickey' out for your actual free account public key on Uploadcare
+  UPLOADCARE_PUBLIC_KEY = "5478a0541d81f6463f3a"; 
 </script>
-  
+<script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js" charset="utf-8"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
 
 <script type="text/babel">
 const {useState,useEffect}=React;
-const ENDPOINT="https://formspree.io/f/mgaezvlr";
+const ENDPOINT="https://formspree.io/f/mgaezvlr"; 
 
 const general=[
 ["What best describes your current situation?",["Employed","Self-employed","Student","Unemployed","Retired","Other"]],
 ["How would you describe your current financial situation?",["Comfortable","Managing, but with some difficulty","Struggling to meet basic needs","Frequently unable to meet basic needs","Prefer not to say"]],
 ["Have you ever needed financial or welfare assistance before?",["Yes","No"]],
 ["What do you believe is the biggest challenge preventing people from getting the support they need?",["Lack of money","High cost of living","Lack of access to welfare programmes","Lack of information","Strict eligibility requirements","Other"]]
-];
+]; 
 
 const programmes={
 Rental:{
@@ -127,7 +133,7 @@ registration:[
 ["How do you normally receive your income?",["Monthly salary","Weekly salary","Irregular income","Other"]],
 ["Approximately how much would you normally need?",["Below ₦50,000","₦50,000–₦100,000","₦100,001–₦200,000","₦200,001–₦500,000","Above ₦500,000","Not sure"]]
 ]}
-};
+}; 
 
 function App(){
 const [stage,setStage]=useState("intro");
@@ -137,65 +143,85 @@ const [progIndex,setProgIndex]=useState(0);
 const [answers,setAnswers]=useState({});
 const [regAnswers,setRegAnswers]=useState({});
 const [contact,setContact]=useState({name:"",phone:"",email:"",location:"",contactMethod:"WhatsApp"});
-const [idFile,setIdFile]=useState(null);
+const [idFile,setIdFile]=useState(null); 
+const [uploading,setUploading]=useState(false);
 const [register,setRegister]=useState({});
 const [busy,setBusy]=useState(false);
 const [err,setErr]=useState("");
-const [ref,setRef]=useState("");
+const [ref,setRef]=useState(""); 
+
+const openUploader=()=>{
+  setUploading(true);
+  uploadcare.openDialog(null,{
+    imagesOnly:false,
+    tabs:'file camera'
+  }).done(function(file){
+    file.done(function(fileInfo){
+      setIdFile(fileInfo.cdnUrl);
+      setUploading(false);
+      setErr("");
+    }).fail(function(){
+      setUploading(false);
+      setErr("File upload failed. Please try again.");
+    });
+  }).fail(function(){
+    setUploading(false);
+  });
+}; 
 
 const toggle=(p)=>{
-  if(p==="Survey only"){
-    setSelected(["Survey only"]);
-  } else {
-    setSelected(x=> {
-      const filtered = x.filter(y=>y!=="Survey only");
-      return filtered.includes(p)?filtered.filter(y=>y!==p):[...filtered,p];
-    });
-  }
-};
+  if(p==="Survey only"){
+    setSelected(["Survey only"]);
+  } else {
+    setSelected(x=> {
+      const filtered = x.filter(y=>y!=="Survey only");
+      return filtered.includes(p)?filtered.filter(y=>y!==p):[...filtered,p];
+    });
+  }
+}; 
 
-const start=()=>{setErr("");setStage("general");};
+const start=()=>{setErr("");setStage("general");}; 
 
 const saveGeneral=(i,v)=>setGeneralAns(x=>({...x,[i]:v}));
 const saveProg=(p,i,v)=>setAnswers(x=>({...x,[p+":"+i]:v}));
-const saveReg=(p,i,v)=>setRegAnswers(x=>({...x,[p+":"+i]:v}));
+const saveReg=(p,i,v)=>setRegAnswers(x=>({...x,[p+":"+i]:v})); 
 
 function nextGeneral(){
 if(!selected.length){setErr("Please select at least one welfare area, or choose “I'm only completing the survey.”");return}
 if(selected.includes("Survey only")){setStage("final");return}
 setProgIndex(0);setStage("programme");setErr("");
-}
+} 
 
 function nextProgramme(){
 setStage("interest");setErr("");
-}
+} 
 
 function chooseInterest(v){
 const p=selected[progIndex];
 setRegister(x=>({...x,[p]:v}));
 if(v==="Yes"){
-  setStage("registration");
+  setStage("registration");
 } else {
-  if(progIndex<selected.length-1){
-    setProgIndex(x=>x+1);
-    setStage("programme");
-  } else {
-    setStage("consent");
-  }
+  if(progIndex<selected.length-1){
+    setProgIndex(x=>x+1);
+    setStage("programme");
+  } else {
+    setStage("consent");
+  }
 }
-}
+} 
 
 function nextRegistration(){
 if(!contact.name.trim()||!contact.phone.trim()||!contact.location.trim()){setErr("Please complete your name, phone number and location.");return}
 if(!idFile){setErr("Please upload an ID for registration.");return}
 if(progIndex<selected.length-1){
-  setProgIndex(x=>x+1);
-  setStage("programme");
-  setErr("");
+  setProgIndex(x=>x+1);
+  setStage("programme");
+  setErr("");
 } else {
-  setStage("consent");
+  setStage("consent");
 }
-}
+} 
 
 async function submit(){
 setErr("");setBusy(true);
@@ -210,19 +236,48 @@ f.append("email",contact.email||"Not provided");
 f.append("location",contact.location||"Not provided");
 f.append("preferred_contact",contact.contactMethod);
 f.append("selected_programmes",selected.join(", "));
-f.append("registration_status",JSON.stringify(register));
-general.forEach((q,i)=>f.append("general_"+(i+1),generalAns[i]||"(Not answered)"));
-Object.entries(answers).forEach(([k,v])=>f.append("programme_"+k,v||"(Not answered)"));
-Object.entries(regAnswers).forEach(([k,v])=>f.append("registration_"+k,v||"(Not answered)"));
-if(idFile)f.append("identification_document",idFile);
+f.append("registration_status",JSON.stringify(register)); 
+
+general.forEach((q,i)=>{
+  f.append(q[0], generalAns[i] || "(Not answered)");
+}); 
+
+Object.entries(answers).forEach(([key, val]) => {
+  const [progName, indexStr] = key.split(":");
+  const idx = parseInt(indexStr, 10);
+  const progData = programmes[progName];
+  if (progData && progData.questions[idx]) {
+    f.append(`[${progData.title}] ${progData.questions[idx][0]}`, val || "(Not answered)");
+  } else {
+    f.append(`programme_${key}`, val || "(Not answered)");
+  }
+}); 
+
+Object.entries(regAnswers).forEach(([key, val]) => {
+  const [progName, fieldId] = key.split(":");
+  const progData = programmes[progName];
+  if (fieldId === "description") {
+    f.append(`[${progName} Registration] Describe the support you need`, val || "(Not answered)");
+  } else {
+    const idx = parseInt(fieldId, 10);
+    if (progData && progData.registration[idx]) {
+      f.append(`[${progData.title} Registration] ${progData.registration[idx][0]}`, val || "(Not answered)");
+    } else {
+      f.append(`registration_${key}`, val || "(Not answered)");
+    }
+  }
+}); 
+
+if(idFile) f.append("identification_document_url",idFile); 
+
 const r=await fetch(ENDPOINT,{method:"POST",body:f,headers:{Accept:"application/json"}});
 if(!r.ok)throw new Error("Formspree could not accept the submission. Please try again.");
 setRef(reference);setStage("done");
 }catch(e){setErr(e.message||"Something went wrong. Please try again.");}
 finally{setBusy(false);}
-}
+} 
 
-function Footer(){return <div className="footer">© Welfare Systems 2026</div>}
+function Footer(){return <div className="footer">© Welfare Systems 2026</div>} 
 
 if(stage==="intro")return <main className="page"><section className="card">
 <div className="tag">● WELFARE SYSTEMS SURVEY</div>
@@ -230,7 +285,7 @@ if(stage==="intro")return <main className="page"><section className="card">
 <p className="sub">This survey is designed to understand where people need practical support and how welfare systems can better support individuals, families and communities.</p>
 <div className="note"><b>There are no right or wrong answers.</b>Your responses will help us understand real needs and improve how welfare support is designed.</div>
 <button className="primary" onClick={start}>Begin Survey →</button><Footer/>
-</section></main>;
+</section></main>; 
 
 if(stage==="general")return <main className="page"><section className="card">
 <div className="meta"><span>ABOUT YOU</span><span>1 / {general.length}</span></div>
@@ -240,7 +295,7 @@ if(stage==="general")return <main className="page"><section className="card">
 {["Rental","Health","Education","Salary Up-front","Survey only"].map(o=><label className="choice" key={o}><input type="checkbox" checked={selected.includes(o)} onChange={()=>toggle(o)}/>{o==="Survey only"?"I'm only completing the survey":(programmes[o]?programmes[o].title:o)}</label>)}
 {err&&<div className="error">{err}</div>}
 <div className="actions"><button className="secondary" onClick={()=>setStage("intro")}>← Back</button><button className="primary" onClick={nextGeneral}>Continue →</button></div><Footer/>
-</section></main>;
+</section></main>; 
 
 if(stage==="programme"){
 const p=selected[progIndex],data=programmes[p];
@@ -252,7 +307,7 @@ return <main className="page"><section className="card">
 {err&&<div className="error">{err}</div>}
 <div className="actions"><button className="secondary" onClick={()=>{if(progIndex===0)setStage("general");else {setProgIndex(x=>x-1);setStage("interest")}}}>← Back</button><button className="primary" onClick={nextProgramme}>Continue →</button></div><Footer/>
 </section></main>;
-}
+} 
 
 if(stage==="interest"){
 const p=selected[progIndex],data=programmes[p];
@@ -265,7 +320,7 @@ return <main className="page"><section className="card">
 <div className="choice" onClick={()=>chooseInterest("No")}><input type="radio" readOnly checked={register[p]==="No"}/> No, I'm only providing survey feedback</div>
 <div className="actions" style={{marginTop: "20px"}}><button className="secondary" onClick={()=>setStage("programme")}>← Back</button></div>
 <Footer/></section></main>;
-}
+} 
 
 if(stage==="registration"){
 const p=selected[progIndex],data=programmes[p];
@@ -280,13 +335,26 @@ return <main className="page"><section className="card">
 <label>Location / Area *</label><input value={contact.location} onChange={e=>setContact({...contact,location:e.target.value})} placeholder="City / area"/>
 <label>Preferred contact method</label><select value={contact.contactMethod} onChange={e=>setContact({...contact,contactMethod:e.target.value})}><option>WhatsApp</option><option>Phone call</option><option>SMS</option><option>Email</option></select>
 {data.registration.map((q,i)=><div key={i}><label>{q[0]}</label>{q[1].map(o=><label className="choice" key={o}><input type="radio" name={"r"+p+i} checked={regAnswers[p+":"+i]===o} onChange={()=>saveReg(p,i,o)}/>{o}</label>)}</div>)}
-<label>Briefly describe the support you need</label><textarea value={regAnswers[p+":description"]||""} onChange={e=>saveReg(p,"description",e.target.value)} placeholder="Tell us what you need..."></textarea>
-<label>Identification document *</label><input className="file" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={e=>setIdFile(e.target.files ? e.target.files[0] : null)}/>
+<label>Briefly describe the support you need</label><textarea value={regAnswers[p+":description"]||""} onChange={e=>saveReg(p,"description",e.target.value)} placeholder="Tell us what you need..."></textarea> 
+
+<label>Identification document *</label> 
+
+<div className="file-wrapper">
+  <button type="button" className="secondary" onClick={openUploader} disabled={uploading}>
+    {uploading ? "Uploading Attachment..." : idFile ? "✓ File Linked Successfully" : "Choose ID File"}
+  </button>
+  {idFile && (
+    <div style={{marginTop:"8px",fontSize:"13px",color:"#52766d"}}>
+      File Ready: <a href={idFile} target="_blank" rel="noreferrer" style={{color:"#426b61",fontWeight:"bold",textDecoration:"underline"}}>Preview Document</a>
+    </div>
+  )}
+</div> 
+
 <p className="small">Accepted: JPG, PNG or PDF. Please upload a clear, valid ID. Do not upload passwords, PINs or unrelated documents.</p>
 {err&&<div className="error">{err}</div>}
 <div className="actions"><button className="secondary" onClick={()=>setStage("interest")}>← Back</button><button className="primary" onClick={nextRegistration}>Continue →</button></div><Footer/>
 </section></main>;
-}
+} 
 
 if(stage==="consent")return <main className="page"><section className="card">
 <div className="tag">FINAL CONFIRMATION</div><h2>Ready to submit?</h2>
@@ -296,21 +364,21 @@ if(stage==="consent")return <main className="page"><section className="card">
 <label className="choice"><input type="checkbox" id="c3" onChange={e=>setRegister({...register,_c3:e.target.checked})}/> I consent to Welfare Systems using the information I provide to process and follow up on my registration.</label>
 {err&&<div className="error">{err}</div>}
 <div className="actions"><button className="secondary" onClick={()=>{
-  const p=selected[progIndex];
-  if(register[p]==="Yes") setStage("registration");
-  else setStage("interest");
+  const p=selected[progIndex];
+  if(register[p]==="Yes") setStage("registration");
+  else setStage("interest");
 }}>← Back</button><button className="primary" disabled={busy||!register._c1||!register._c2||!register._c3} onClick={submit}>{busy?"Sending…":"Submit Survey & Registration"}</button></div><Footer/>
-</section></main>;
+</section></main>; 
 
 if(stage==="final")return <main className="page"><section className="card success">
-<div className="mark">✓</div><div className="tag">SURVEY COMPLETE</div><h2>Thank you for taking part.</h2><p className="lead">Your survey response has been received. Thank you for helping us understand what welfare support people need.</p><button className="primary" onClick={()=>location.reload()}>Return to Survey</button><Footer/>
-</section></main>;
+<div className="mark">✓</div><div className="tag">SURVEY COMPLETE</div><h2>Thank you for taking part.</h2><p className="lead">Your survey response has been received. Thank you for helping us understand what welfare support people need.</p><button className="primary" onClick={()=>window.location.reload()}>Return to Survey</button><Footer/>
+</section></main>; 
 
 return <main className="page"><section className="card success">
 <div className="mark">✓</div><div className="tag">REGISTRATION RECEIVED</div><h2>Your information has been submitted.</h2><p className="lead">Thank you for taking part in the Welfare Systems Survey. Your registration request has been received for review.</p>
-<div className="note"><b>Reference Number</b>{ref}</div>
+<div className="note"><b>Reference Number</b> {ref}</div>
 <p className="small">Registration does not automatically guarantee approval or immediate assistance. If further information is required, you may be contacted using the details you provided.</p>
-<button className="primary" onClick={()=>location.reload()}>Return to Survey</button><Footer/>
+<button className="primary" onClick={()=>window.location.reload()}>Return to Survey</button><Footer/>
 </section></main>;
 }
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
